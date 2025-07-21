@@ -105,77 +105,86 @@
 	</div>
 
 	<script>
+		// Получаем параметры из URL
 		const urlParams = new URLSearchParams(window.location.search)
 		const configKey = urlParams.get('key')
 		const platform = urlParams.get('platform') || 'ios'
 
+		console.log('URL params:', {
+			key: configKey,
+			platform: platform,
+			fullURL: window.location.href
+		})
+
 		if (configKey) {
-			// Декодируем конфигурацию (она уже закодирована в URL)
+			// Декодируем конфигурацию точно так же, как SupaVPN
 			const decodedConfig = decodeURIComponent(configKey)
 
-			console.log('Original config:', decodedConfig)
+			console.log('Decoded config:', decodedConfig)
 
 			// Добавляем отладочную информацию
 			document.getElementById('debug-info').innerHTML = `
-				URL param 'key': ${configKey}<br>
-				Decoded config: ${decodedConfig}<br>
-				Config starts with: ${decodedConfig.substring(0, 20)}...<br>
-				Config length: ${decodedConfig.length}
+				<strong>URL:</strong> ${window.location.href}<br>
+				<strong>Raw key param:</strong> ${configKey}<br>
+				<strong>Decoded config:</strong> ${decodedConfig}<br>
+				<strong>Config length:</strong> ${decodedConfig.length} chars<br>
+				<strong>Starts with:</strong> ${decodedConfig.substring(0, 30)}...<br>
+				<strong>Platform:</strong> ${platform}
 			`
 
-			// Пробуем разные форматы deep link
-			const formats = [
-				`v2raytun://add/${decodedConfig}`,
-				`v2raytun://import/${decodedConfig}`,
-				`v2raytun://config/${decodedConfig}`,
-				`v2raytun://add/${btoa(decodedConfig)}`, // base64
-				`v2raytun://import/${btoa(decodedConfig)}`, // base64
-			]
+			// Используем точно такой же формат, как SupaVPN
+			const v2rayTunLink = `v2raytun://add/${decodedConfig}`
 
-			let currentFormat = 0
-			const v2rayTunLink = formats[currentFormat]
+			console.log('Generated deep link:', v2rayTunLink)
 
-			console.log('Deep link:', v2rayTunLink)
+			// Показываем debug сразу для проверки
+			document.getElementById('fallback').style.display = 'block'
+			document.querySelector('.spinner').style.display = 'none'
 
+			// Пытаемся открыть приложение
 			setTimeout(() => {
+				console.log('Attempting to open:', v2rayTunLink)
 				window.location.href = v2rayTunLink
-			}, 1000)
-
-			// Если первый формат не сработал, пробуем следующий
-			setTimeout(() => {
-				if (currentFormat < formats.length - 1) {
-					currentFormat++
-					console.log('Trying format:', formats[currentFormat])
-					window.location.href = formats[currentFormat]
-				}
 			}, 2000)
 
+			// Обновляем UI через 5 секунд
 			setTimeout(() => {
-				document.getElementById('fallback').style.display = 'block'
-				document.querySelector('.spinner').style.display = 'none'
-				document.querySelector('h2').textContent = '📱 Установите V2rayTUN'
-				document.querySelector('p').textContent = 'Для автоматического импорта конфигурации нужно сначала установить приложение'
-
+				document.querySelector('h2').textContent = '📱 Откройте V2rayTUN вручную'
+				document.querySelector('p').textContent = 'Скопируйте конфигурацию ниже и добавьте её в приложение вручную'
 				document.getElementById('config').textContent = decodedConfig
-			}, 3000)
+			}, 5000)
 
+			// Для iOS добавляем iframe метод
 			if (platform === 'ios') {
 				setTimeout(() => {
-					const iframe = document.createElement('iframe')
-					iframe.style.display = 'none'
-					iframe.src = v2rayTunLink
-					document.body.appendChild(iframe)
+					try {
+						const iframe = document.createElement('iframe')
+						iframe.style.display = 'none'
+						iframe.src = v2rayTunLink
+						document.body.appendChild(iframe)
 
-					setTimeout(() => {
-						document.body.removeChild(iframe)
-					}, 500)
-				}, 1500)
+						setTimeout(() => {
+							if (document.body.contains(iframe)) {
+								document.body.removeChild(iframe)
+							}
+						}, 1000)
+					} catch (e) {
+						console.log('iframe method failed:', e)
+					}
+				}, 3000)
 			}
+
 		} else {
+			// Если нет параметра key
 			document.querySelector('.spinner').style.display = 'none'
 			document.querySelector('h2').textContent = '❌ Ошибка'
-			document.querySelector('p').textContent = 'Конфигурация VPN не найдена'
+			document.querySelector('p').textContent = 'Конфигурация VPN не найдена в URL'
 			document.getElementById('fallback').style.display = 'block'
+			document.getElementById('debug-info').innerHTML = `
+				<strong>Error:</strong> No 'key' parameter found in URL<br>
+				<strong>Current URL:</strong> ${window.location.href}<br>
+				<strong>Available params:</strong> ${Array.from(urlParams.keys()).join(', ') || 'none'}
+			`
 		}
 
 		function toggleConfig() {
@@ -188,15 +197,6 @@
 				config.style.display = 'none'
 				button.textContent = '📋 Показать конфигурацию для ручного ввода'
 			}
-		}
-
-		if (platform === 'android' && configKey) {
-			// Для Android также убираем дополнительное кодирование
-			const androidIntent = `intent://add/${decodedConfig}#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=https://play.google.com/store/apps/details?id=com.v2raytun.android;end`
-
-			setTimeout(() => {
-				window.location.href = androidIntent
-			}, 1200)
 		}
 	</script>
 </body>
