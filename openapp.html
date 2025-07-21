@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Открыть VPN в V2rayTUN</title>
+	<style>
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			margin: 0;
+			padding: 20px;
+			min-height: 100vh;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: white;
+		}
+
+		.container {
+			text-align: center;
+			max-width: 400px;
+			background: rgba(255, 255, 255, 0.1);
+			padding: 40px;
+			border-radius: 20px;
+			backdrop-filter: blur(10px);
+			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+		}
+
+		.spinner {
+			width: 40px;
+			height: 40px;
+			border: 4px solid rgba(255, 255, 255, 0.3);
+			border-radius: 50%;
+			border-top-color: white;
+			animation: spin 1s ease-in-out infinite;
+			margin: 0 auto 20px;
+		}
+
+		@keyframes spin {
+			to {
+				transform: rotate(360deg);
+			}
+		}
+
+		.app-button {
+			display: inline-block;
+			background: #007AFF;
+			color: white;
+			text-decoration: none;
+			padding: 15px 30px;
+			border-radius: 12px;
+			font-weight: 500;
+			margin-top: 20px;
+			transition: all 0.3s ease;
+		}
+
+		.app-button:hover {
+			background: #005fcf;
+			transform: translateY(-2px);
+		}
+
+		.manual-config {
+			margin-top: 30px;
+			padding: 20px;
+			background: rgba(255, 255, 255, 0.1);
+			border-radius: 12px;
+			font-family: monospace;
+			font-size: 12px;
+			word-break: break-all;
+			display: none;
+		}
+
+		.show-config {
+			color: rgba(255, 255, 255, 0.8);
+			text-decoration: underline;
+			cursor: pointer;
+			font-size: 14px;
+			margin-top: 15px;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<div class="spinner"></div>
+		<h2>🚀 Открываем V2rayTUN</h2>
+		<p>Автоматически перенаправляем вас в приложение...</p>
+
+		<div id="fallback" style="display: none;">
+			<p>⚠️ Не удалось открыть приложение автоматически</p>
+			<a href="https://apps.apple.com/app/v2raytun/id1599608807" class="app-button">
+				📱 Скачать V2rayTUN
+			</a>
+			<div class="show-config" onclick="toggleConfig()">
+				📋 Показать конфигурацию для ручного ввода
+			</div>
+			<div class="manual-config" id="config"></div>
+		</div>
+	</div>
+
+	<script>
+		const urlParams = new URLSearchParams(window.location.search)
+		const configKey = urlParams.get('key')
+		const platform = urlParams.get('platform') || 'ios'
+
+		if (configKey) {
+			const decodedConfig = decodeURIComponent(configKey)
+
+			const v2rayTunLink = `v2raytun://add/${encodeURIComponent(decodedConfig)}`
+
+			setTimeout(() => {
+				window.location.href = v2rayTunLink
+			}, 1000)
+
+			setTimeout(() => {
+				document.getElementById('fallback').style.display = 'block'
+				document.querySelector('.spinner').style.display = 'none'
+				document.querySelector('h2').textContent = '📱 Установите V2rayTUN'
+				document.querySelector('p').textContent = 'Для автоматического импорта конфигурации нужно сначала установить приложение'
+
+				document.getElementById('config').textContent = decodedConfig
+			}, 3000)
+
+			if (platform === 'ios') {
+				setTimeout(() => {
+					const iframe = document.createElement('iframe')
+					iframe.style.display = 'none'
+					iframe.src = v2rayTunLink
+					document.body.appendChild(iframe)
+
+					setTimeout(() => {
+						document.body.removeChild(iframe)
+					}, 500)
+				}, 1500)
+			}
+		} else {
+			document.querySelector('.spinner').style.display = 'none'
+			document.querySelector('h2').textContent = '❌ Ошибка'
+			document.querySelector('p').textContent = 'Конфигурация VPN не найдена'
+			document.getElementById('fallback').style.display = 'block'
+		}
+
+		function toggleConfig() {
+			const config = document.getElementById('config')
+			const button = document.querySelector('.show-config')
+			if (config.style.display === 'none' || !config.style.display) {
+				config.style.display = 'block'
+				button.textContent = '🔼 Скрыть конфигурацию'
+			} else {
+				config.style.display = 'none'
+				button.textContent = '📋 Показать конфигурацию для ручного ввода'
+			}
+		}
+
+		if (platform === 'android' && configKey) {
+			const androidIntent = `intent://add/${encodeURIComponent(decodeURIComponent(configKey))}#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=https://play.google.com/store/apps/details?id=com.v2raytun.android;end`
+
+			setTimeout(() => {
+				window.location.href = androidIntent
+			}, 1200)
+		}
+	</script>
+</body>
+
+</html>
