@@ -119,7 +119,7 @@
 		if (configKey) {
 			// Декодируем конфигурацию точно так же, как SupaVPN
 			const decodedConfig = decodeURIComponent(configKey)
-
+			
 			console.log('Decoded config:', decodedConfig)
 
 			// Добавляем отладочную информацию
@@ -134,7 +134,7 @@
 
 			// Используем точно такой же формат, как SupaVPN
 			const v2rayTunLink = `v2raytun://add/${decodedConfig}`
-
+			
 			console.log('Generated deep link:', v2rayTunLink)
 
 			// Показываем debug сразу для проверки
@@ -162,7 +162,7 @@
 						iframe.style.display = 'none'
 						iframe.src = v2rayTunLink
 						document.body.appendChild(iframe)
-
+						
 						setTimeout(() => {
 							if (document.body.contains(iframe)) {
 								document.body.removeChild(iframe)
