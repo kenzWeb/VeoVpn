@@ -97,6 +97,10 @@
 				📋 Показать конфигурацию для ручного ввода
 			</div>
 			<div class="manual-config" id="config"></div>
+			<div class="manual-config" id="debug" style="display: block; background: rgba(255,0,0,0.2);">
+				<strong>Debug info:</strong><br>
+				<div id="debug-info"></div>
+			</div>
 		</div>
 	</div>
 
@@ -106,13 +110,45 @@
 		const platform = urlParams.get('platform') || 'ios'
 
 		if (configKey) {
+			// Декодируем конфигурацию (она уже закодирована в URL)
 			const decodedConfig = decodeURIComponent(configKey)
 
-			const v2rayTunLink = `v2raytun://add/${encodeURIComponent(decodedConfig)}`
+			console.log('Original config:', decodedConfig)
+
+			// Добавляем отладочную информацию
+			document.getElementById('debug-info').innerHTML = `
+				URL param 'key': ${configKey}<br>
+				Decoded config: ${decodedConfig}<br>
+				Config starts with: ${decodedConfig.substring(0, 20)}...<br>
+				Config length: ${decodedConfig.length}
+			`
+
+			// Пробуем разные форматы deep link
+			const formats = [
+				`v2raytun://add/${decodedConfig}`,
+				`v2raytun://import/${decodedConfig}`,
+				`v2raytun://config/${decodedConfig}`,
+				`v2raytun://add/${btoa(decodedConfig)}`, // base64
+				`v2raytun://import/${btoa(decodedConfig)}`, // base64
+			]
+
+			let currentFormat = 0
+			const v2rayTunLink = formats[currentFormat]
+
+			console.log('Deep link:', v2rayTunLink)
 
 			setTimeout(() => {
 				window.location.href = v2rayTunLink
 			}, 1000)
+
+			// Если первый формат не сработал, пробуем следующий
+			setTimeout(() => {
+				if (currentFormat < formats.length - 1) {
+					currentFormat++
+					console.log('Trying format:', formats[currentFormat])
+					window.location.href = formats[currentFormat]
+				}
+			}, 2000)
 
 			setTimeout(() => {
 				document.getElementById('fallback').style.display = 'block'
@@ -155,7 +191,8 @@
 		}
 
 		if (platform === 'android' && configKey) {
-			const androidIntent = `intent://add/${encodeURIComponent(decodeURIComponent(configKey))}#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=https://play.google.com/store/apps/details?id=com.v2raytun.android;end`
+			// Для Android также убираем дополнительное кодирование
+			const androidIntent = `intent://add/${decodedConfig}#Intent;scheme=v2raytun;package=com.v2raytun.android;S.browser_fallback_url=https://play.google.com/store/apps/details?id=com.v2raytun.android;end`
 
 			setTimeout(() => {
 				window.location.href = androidIntent
